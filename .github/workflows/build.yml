@@ -1,21 +1,29 @@
 name: Build IPA
 
 on:
+  # test builds of this repo against upstream main (artifact only)
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
+  # check upstream for new ollieos version tags
+  schedule:
+    - cron: "17 */3 * * *"
   workflow_dispatch:
     inputs:
-      ollieos_ref:
-        description: OllieOS branch, tag or commit to build
-        default: main
+      ollieos_tag:
+        description: OllieOS tag to build and release (empty for the newest). Rebuilds and replaces an existing release.
+        required: false
+        default: ""
 
 permissions:
   contents: write
 
+env:
+  OLLIEOS_REPO: https://github.com/obfuscatedgenerated/obfuscatedgenerated.github.io.git
+
 jobs:
-  build:
+  test-build:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +37,7 @@ jobs:
 
       - name: Build
         env:
-          OLLIEOS_REF: ${{ github.event.inputs.ollieos_ref || 'main' }}
+          OLLIEOS_REF: main
         run: ./build.sh
 
       - uses: actions/upload-artifact@v4
@@ -38,8 +46,80 @@ jobs:
           path: build/*.ipa
           if-no-files-found: error
 
-      - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+  check-upstream:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.decide.outputs.tag }}
+      should_release: ${{ steps.decide.outputs.should_release }}
+      is_newest: ${{ steps.decide.outputs.is_newest }}
+    steps:
+      - id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_TAG: ${{ github.event.inputs.ollieos_tag }}
+        run: |
+          newest_tag="$(git ls-remote --tags --refs "$OLLIEOS_REPO" 'v*' | awk '{print $2}' | sed 's#refs/tags/##' | sort -V | tail -n 1)"
+          if [ -z "$newest_tag" ]; then
+            echo "No upstream version tags found"
+            exit 1
+          fi
+
+          tag="${REQUESTED_TAG:-$newest_tag}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "is_newest=$([ "$tag" = "$newest_tag" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          elif gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "$tag is already released"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New upstream tag $tag"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.should_release == 'true'
+    runs-on: macos-15
+    concurrency: release
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.check-upstream.outputs.tag }}
+      IS_NEWEST: ${{ needs.check-upstream.outputs.is_newest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          files: build/*.ipa
+          node-version: 22
+
+      - name: Install icon tooling
+        run: python3 -m pip install --break-system-packages pillow
+
+      - name: Build
+        env:
+          OLLIEOS_REF: ${{ needs.check-upstream.outputs.tag }}
+        run: ./build.sh
+
+      - name: Publish release
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" build/*.ipa --clobber
+          else
+            gh release create "$TAG" build/*.ipa \
+              --title "OllieOS $TAG" \
+              --notes "OllieOS $TAG for iOS, built from [upstream $TAG](https://github.com/obfuscatedgenerated/obfuscatedgenerated.github.io/releases/tag/$TAG). Unsigned, sign it with your sideloading tool." \
+              --latest="$IS_NEWEST"
+          fi
+
+      - name: Publish AltStore source
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq '.[]' > build/releases.jsonl
+          python3 scripts/make_altstore_source.py build/releases.jsonl Info.plist build/altstore.json
+
+          # always attached to the latest release, so this url stays stable:
+          # https://github.com/<owner>/<repo>/releases/latest/download/altstore.json
+          latest_tag="$(gh release view --json tagName --jq .tagName)"
+          gh release upload "$latest_tag" build/altstore.json --clobber
