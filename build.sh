@@ -112,7 +112,7 @@ fi
 echo "==> assembling app"
 cp -r "$WWW_STAGING_DIR" "$APP_DIR/www"
 cp "$SCRIPT_DIR/native/keyboard_accessory.js" "$APP_DIR/"
-python3 "$SCRIPT_DIR/make_icons.py" "$UPSTREAM_DIR/public/logo.png" "$APP_DIR"
+python3 "$SCRIPT_DIR/scripts/make_icons.py" "$UPSTREAM_DIR/public/logo.png" "$APP_DIR"
 sed -e "s/__BUNDLE_ID__/$BUNDLE_ID/" -e "s/__VERSION__/$VERSION/g" -e "s/__MIN_IOS__/$MIN_IOS/" \
     "$SCRIPT_DIR/Info.plist" > "$APP_DIR/Info.plist"
 printf 'APPL????' > "$APP_DIR/PkgInfo"
