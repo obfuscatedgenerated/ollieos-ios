@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "ollieos/*": ["../build/ollieos/*"],
+      "*": ["../build/ollieos/node_modules/*"]
+    },
+    "typeRoots": [
+      "../build/ollieos/declarations",
+      "../build/ollieos/node_modules/@types"
+    ],
+    "types": ["node"]
+  },
+  "include": [
+    "src",
+    "../build/ollieos/src/raw.d.ts"
+  ]
+}

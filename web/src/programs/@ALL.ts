@@ -1,0 +1,20 @@
+// programs the ios app registers alongside upstream's built-ins. all of them go through kernel.get_platform()
+export { default as ios_privilege_agent } from "./ios_privilege_agent";
+export { default as battery } from "./battery";
+export { default as brightness } from "./brightness";
+export { default as cal } from "./cal";
+export { default as clip } from "./clip";
+export { default as contacts } from "./contacts";
+export { default as devinfo } from "./devinfo";
+export { default as haptic } from "./haptic";
+export { default as keychain } from "./keychain";
+export { default as motion } from "./motion";
+export { default as notify } from "./notify";
+export { default as pick } from "./pick";
+export { default as save } from "./save";
+export { default as say } from "./say";
+export { default as scan } from "./scan";
+export { default as share } from "./share";
+export { default as torch } from "./torch";
+export { default as wakelock } from "./wakelock";
+export { default as whereami } from "./whereami";
