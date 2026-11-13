@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { ImageAddon } from "@xterm/addon-image";
 
-import {ANSI, NEWLINE} from "ollieos/src/kernel/term_ctl";
+import {ANSI, NEWLINE} from "ollieos/src/lib/ansi";
 import {Kernel} from "ollieos/src/kernel";
 import {ProgramRegistry} from "ollieos/src/kernel/prog_registry";
 import * as programs from "ollieos/src/programs/@ALL";

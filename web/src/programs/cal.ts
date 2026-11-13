@@ -1,5 +1,5 @@
 import type {Program} from "ollieos/src/types";
-import {ANSI} from "ollieos/src/kernel/term_ctl";
+import {ANSI} from "ollieos/src/lib/ansi";
 import {call_capability, require_privileged_capability, write_error} from "./platform_helpers";
 
 interface CalendarEvent {

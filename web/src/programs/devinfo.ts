@@ -1,5 +1,5 @@
 import type {Program} from "ollieos/src/types";
-import {ANSI} from "ollieos/src/kernel/term_ctl";
+import {ANSI} from "ollieos/src/lib/ansi";
 import {call_capability, require_capability} from "./platform_helpers";
 
 interface DeviceInfo {

@@ -1,8 +1,8 @@
 import type {Program} from "ollieos/src/types";
 import type {UserspaceOtherProcessContext} from "ollieos/src/kernel/processes";
-import type {AbstractTerminal} from "ollieos/src/kernel/term_ctl";
+import type {UserspaceTerminal} from "ollieos/src/kernel/term_ctl";
 import type {UserspacePlatformAPI} from "ollieos/src/kernel/platform";
-import {ANSI, NEWLINE} from "ollieos/src/kernel/term_ctl";
+import {ANSI, NEWLINE} from "ollieos/src/lib/ansi";
 import {describe_error} from "./platform_helpers";
 
 export const IOS_PRIVILEGE_AGENT_NAME = "ios_privilege_agent";
@@ -18,14 +18,14 @@ interface AuthenticationResult {
 }
 
 // same prompt as the default agent, used when face id / passcode isn't available
-const ask_with_keypress = async (term: AbstractTerminal, pid: number): Promise<boolean> => {
+const ask_with_keypress = async (term: UserspaceTerminal, pid: number): Promise<boolean> => {
     term.writeln(`${NEWLINE}Do you wish to grant elevated privileges to PID ${pid}? (y/n)${ANSI.STYLE.reset_all}${ANSI.CURSOR.invisible}`);
     const event = await term.wait_for_keypress();
     term.write(ANSI.CURSOR.visible);
     return event.key.toLowerCase() === "y";
 };
 
-const ask_with_authentication = async (platform: UserspacePlatformAPI, term: AbstractTerminal, process: UserspaceOtherProcessContext, reason: string): Promise<boolean> => {
+const ask_with_authentication = async (platform: UserspacePlatformAPI, term: UserspaceTerminal, process: UserspaceOtherProcessContext, reason: string): Promise<boolean> => {
     term.writeln(`${NEWLINE}Confirm with Face ID, Touch ID or your passcode to grant elevated privileges to PID ${process.pid}.${ANSI.STYLE.reset_all}`);
 
     try {

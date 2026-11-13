@@ -1,8 +1,9 @@
 import type {Kernel, UserspaceKernel} from "ollieos/src/kernel";
 import type {AbstractPlatformAPI, UserspacePlatformAPI} from "ollieos/src/kernel/platform";
-import {ANSI, type AbstractTerminal} from "ollieos/src/kernel/term_ctl";
+import type {UserspaceTerminal} from "ollieos/src/kernel/term_ctl";
+import {ANSI} from "ollieos/src/lib/ansi";
 
-export const write_error = (term: AbstractTerminal, message: string): void => {
+export const write_error = (term: UserspaceTerminal, message: string): void => {
     term.writeln(`${ANSI.PREFABS.error}${message}${ANSI.STYLE.reset_all}`);
 };
 
@@ -13,7 +14,7 @@ export const describe_error = (error: unknown): string => {
 /**
  * Gets the userspace platform API if it supports the capability, otherwise explains why not.
  */
-export const require_capability = (kernel: UserspaceKernel, term: AbstractTerminal, capability_name: string): UserspacePlatformAPI | null => {
+export const require_capability = (kernel: UserspaceKernel, term: UserspaceTerminal, capability_name: string): UserspacePlatformAPI | null => {
     const platform = kernel.get_platform();
     if (!platform?.supports(capability_name)) {
         write_error(term, `This needs the "${capability_name}" platform capability, which isn't available here.`);
@@ -26,7 +27,7 @@ export const require_capability = (kernel: UserspaceKernel, term: AbstractTermin
 /**
  * Requests privileges (if not already privileged) and returns the full platform API for a privileged capability.
  */
-export const require_privileged_capability = async (kernel: UserspaceKernel, term: AbstractTerminal, capability_name: string, reason: string): Promise<AbstractPlatformAPI | null> => {
+export const require_privileged_capability = async (kernel: UserspaceKernel, term: UserspaceTerminal, capability_name: string, reason: string): Promise<AbstractPlatformAPI | null> => {
     if (!kernel.get_platform()?.supports(capability_name)) {
         write_error(term, `This needs the "${capability_name}" platform capability, which isn't available here.`);
         return null;
@@ -45,7 +46,7 @@ export const require_privileged_capability = async (kernel: UserspaceKernel, ter
  * Calls a capability, writing any error to the terminal.
  * @returns The result, or null if the call failed.
  */
-export const call_capability = async <Result>(platform: UserspacePlatformAPI | AbstractPlatformAPI, term: AbstractTerminal, capability_name: string, args?: unknown): Promise<Result | null> => {
+export const call_capability = async <Result>(platform: UserspacePlatformAPI | AbstractPlatformAPI, term: UserspaceTerminal, capability_name: string, args?: unknown): Promise<Result | null> => {
     try {
         return await platform.call(capability_name, args) as Result;
     } catch (error) {

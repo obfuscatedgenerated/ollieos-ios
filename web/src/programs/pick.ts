@@ -1,6 +1,6 @@
 import type {Program} from "ollieos/src/types";
 import type {UserspaceFileSystem} from "ollieos/src/kernel/filesystem";
-import {ANSI} from "ollieos/src/kernel/term_ctl";
+import {ANSI} from "ollieos/src/lib/ansi";
 import {base64_to_bytes, call_capability, require_privileged_capability, write_error} from "./platform_helpers";
 
 interface PickedFile {
